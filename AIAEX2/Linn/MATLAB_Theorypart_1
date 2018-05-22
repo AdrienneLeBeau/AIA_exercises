@@ -1,0 +1,18 @@
+clear all; clc; close all
+
+L = 100;            % Given 
+F = zeros(1,L);     % Empty vector 
+F(1) = 1000+i*1000; % Given function, here centered in F(0)/L = (10,10)
+F(2) = 100+i*100;   % Given function
+f_grid = 0:(L-1);   % Freq. grid
+X = ifft(F);        % Inverse fourier transform
+figure, plot(X,'*bl')
+
+
+L = 100;
+F = zeros(1,L);
+F(1) = 0;           % Now its centered in the origin 
+F(2) = 100+i*100;
+f_grid = 0:(L-1);
+X = ifft(F);
+figure, plot(X,'*bl')
