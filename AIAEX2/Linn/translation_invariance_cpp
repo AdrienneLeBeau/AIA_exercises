@@ -1,0 +1,6 @@
+  plotFD(fd, "fd not normalized", 0);
+
+  // translation invariance
+  fd.row(0) = 0;
+
+  plotFD(fd, "fd translation invariant", 0);
