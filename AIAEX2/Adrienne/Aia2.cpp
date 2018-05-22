@@ -23,17 +23,28 @@ void Aia2::getContourLine(const Mat& img, vector<Mat>& objList, int thresh, int 
 
 
     // TO DO !!!
-	
+	/*
+	Binary Image
+	*/
 	namedWindow("Binary Image", CV_WINDOW_AUTOSIZE);
 	imshow("Binary Image", img);
+	/*
+	Threshold image
+	*/	
 	threshold(img, img, thresh, 255, THRESH_BINARY_INV);
 	namedWindow("Threshold Demo", CV_WINDOW_AUTOSIZE);
 	imshow("Threshold Demo", img);
-	namedWindow("Erosion Demo", CV_WINDOW_AUTOSIZE);
-	
+	/*
+	Erosion image
+	*/
+	namedWindow("Erosion Demo", CV_WINDOW_AUTOSIZE);	
 	erode(img, img, Mat(), Point(-1, -1), k);
 	imshow("Erosion Demo", img);
-	findContours(img, objList, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	/*
+	find contours
+	*/
+	//findContours(img, objList, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+	findContours(img, objList, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 	
 
 	
@@ -50,7 +61,8 @@ Mat Aia2::makeFD(const Mat& contour){
 	Mat contour_new;
 	Mat contour_dft;
 	contour.convertTo(contour_new, CV_32F);
-	dft(contour_new, contour_dft);
+	//dft(contour_new, contour_dft);
+	dft(contour_new, contour_dft, DFT_COMPLEX_OUTPUT);
 	
     return contour_dft;
 
@@ -65,25 +77,28 @@ out		the normalized fourier descriptor
 Mat Aia2::normFD(const Mat& fd, int n){
    
   //plotFD(<???>, "fd not normalized", 0);
-	//plotFD(fd, "fd not normalized", 2000);
+	plotFD(fd, "fd not normalized", 2000);
   
   // translation invariance
   // TO DO !!!
   //plotFD(<???>, "fd translation invariant", 0);
-	Mat fd_new = fd.clone();
-	fd_new.at<float>(0, 0) = 0;	 
-	plotFD(fd_new, "fd translation invariant", 10000);
+	Mat fd_translation_inv = fd.clone();
+	fd_translation_inv.row(0) = 0;	
+	plotFD(fd_translation_inv, "fd translation invariant", 2000);
   
   // scale invariance
   // TO DO !!!
-  //plotFD(<???>, "fd translation and scale invariant", 0);
+	Mat fd_scale_inv = fd_translation_inv.clone();
+	float f1 = abs(fd_scale_inv.at<float>(1, 1));
+	fd_scale_inv / f1;
+	plotFD(fd_scale_inv, "fd translation and scale invariant", 2000);
   
   // rotation invariance
   // TO DO !!!
   //plotFD(<???>, "fd translation, scale, and rotation invariant", 0);
-	Mat magnitude;
-	Mat angle;
-	cartToPolar(fd_new.row, fd_new.col, magnitude, angle);
+	//Mat magnitude;
+	//Mat angle;
+	//cartToPolar(fd_new.row, fd_new.col, magnitude, angle);
 	
   
   // smaller sensitivity for details
@@ -103,7 +118,7 @@ void Aia2::plotFD(const Mat& fd, string win, double dur){
 
    // TO DO !!!
 	//Transform fourier-descriptor to pixel coordinates
-	Mat fd_pixel;
+	/*Mat fd_pixel;
 	Mat fd_rot_normalized;
 	Mat channel[2];
 	split(fd, channel);
@@ -122,7 +137,51 @@ void Aia2::plotFD(const Mat& fd, string win, double dur){
 	{
 		cerr << e.msg << endl; // output exception message
 	}
-	
+	*/
+	Mat invDFT;
+	dft(fd, invDFT, DFT_INVERSE); // Inverse transform to get image back.
+								  //Mat Image. This is the base image matrix
+	Mat Image(800, 800, CV_8UC1, Scalar(1));
+
+	double maxVal;
+	double minVal;
+	double ch1_minVal;
+	double ch1_maxVal;
+	double ch2_minVal;
+	double ch2_maxVal;
+	// Split 1 dim 2 channel Mat to a vector of two 1 dim 1 chan Mat
+	vector<Mat> CH_splitted;
+	split(invDFT, CH_splitted);
+
+	minMaxLoc(CH_splitted[0], &ch1_minVal, &ch1_maxVal);
+	cout << ch1_maxVal << endl;
+	cout << ch1_minVal << endl;
+
+	minMaxLoc(CH_splitted[1], &ch2_minVal, &ch2_maxVal);
+	cout << ch2_maxVal << endl;
+	cout << ch2_minVal << endl;
+
+	double X = max((ch1_maxVal - ch1_minVal), (ch2_maxVal - ch2_minVal));
+	//
+	CH_splitted[0].convertTo(CH_splitted[0], CV_32S, 1, -ch1_minVal);
+	CH_splitted[1].convertTo(CH_splitted[1], CV_32S, 1, -ch2_minVal);
+	CH_splitted[0].convertTo(CH_splitted[0], CV_32S, 600 / X, 100);
+	CH_splitted[1].convertTo(CH_splitted[1], CV_32S, 600 / X, 100);
+
+	//
+	vector<Mat> big;
+	Mat stContour;
+	merge(CH_splitted, stContour);
+	big.push_back(stContour);
+	drawContours(Image, big, 0, 255, FILLED);
+	namedWindow(win, CV_WINDOW_AUTOSIZE);
+	imshow(win, Image);	
+	waitKey(dur);
+	//showImage(Image, win, dur);
+	Image.convertTo(Image, CV_8U, 1, 0);
+	string title = win + ".jpg";
+	imwrite(title, Image);
+
 	
 
     
@@ -205,8 +264,8 @@ void Aia2::run(string img, string template1, string template2){
 	vector<Mat> contourLines;
 	// TO DO !!!
 	// --> Adjust threshold and number of erosion operations
-	binThreshold = 0;
-	numOfErosions = 1;
+	binThreshold = 135;
+	numOfErosions = 2;
 	getContourLine(query, contourLines, binThreshold, numOfErosions);
 	
 	cout << "Found " << contourLines.size() << " object candidates" << endl;
