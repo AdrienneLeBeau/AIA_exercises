@@ -7,7 +7,7 @@
 //============================================================================
 /*
 //g++ -ggdb `pkg-config --cflags --libs opencv` main.cpp Aia2.cpp -o out
-//./out
+//./out img/orig.jpg img/blatt_art1.jpg img/blatt_art2.jpg
 */
 
 #include "Aia2.h"
@@ -67,10 +67,60 @@ out		the normalized fourier descriptor
 */
 
 Mat Aia2::normFD(const Mat& fd, int n){
+  plotFD(fd, "fd not normalized", 0);
+  cv::Mat2d fd_norma;
+  fd.copyTo(fd_norma);
 
-  Aia2::plotFD(fd,"FD not normalized",0);
+  // Translation invariance
+  fd_norma(0,0) = Vec2f(0.0,0.0);
+  plotFD(fd_norma, "FD translation invariant", 0);
 
-  return fd;
+  // Scale invariance
+  float norm_positive = cv::norm(fd.at<Vec2f>(1));
+  for(int i= 0; i< fd.rows; ++i)
+  {
+   fd_norma(i) = fd_norma(i)/norm_positive*100; //Scale to 100 instead of 1 because values become too small
+  }
+  plotFD(fd_norma, "fd translation and scale invariant", 0);
+
+
+  // rotation invariance
+
+  vector<Mat> CH_splitted;
+  Mat fd_polar;
+  split(fd_norma, CH_splitted);
+  cartToPolar(CH_splitted[0],CH_splitted[1],CH_splitted[0],CH_splitted[1]);
+  //CH_splitted[1] =  0;
+  fd_polar = CH_splitted[0];
+  plotFD(fd_polar, "fd translation, scale, and rotation invariant", 0);
+
+
+  // smaller sensitivity for details
+/*  // Create new Mat of proper length
+  cv::Mat2d Res_invariant(Size(1,n+1),CV_32F);
+  // Copy over frequency 0
+  fd.row(0).copyTo(Res_invariant.row(0));
+  // Copy over the rest of the frequencies to save
+  for(int i = 1; i<= n/2; ++i){      // Iterate through all positive frequencies
+    fd.row(i).copyTo(Res_invariant.row(i));
+  }
+  for(int i = n/2+1; i<= n; ++i){   // Iterate through all negative frequencies
+    fd.row(fd.rows-n-1+i).copyTo(Res_invariant.row(i));
+  }
+  //plotFD(Res_invariant, "fd translation, scale, and rotation invariant, smaller sensitivity", 0);
+*/
+  Mat Res_invariant(Size(1,n+1),CV_32F);
+  // Copy over frequency 0
+  fd_polar.row(0).copyTo(Res_invariant.row(0));
+  // Copy over the rest of the frequencies to save
+  for(int i = 1; i<= n/2; ++i){      // Iterate through all positive frequencies
+    fd_polar.row(i).copyTo(Res_invariant.row(i));
+  }
+  for(int i = n/2+1; i<= n; ++i){   // Iterate through all negative frequencies
+    fd_polar.row(fd.rows-n-1+i).copyTo(Res_invariant.row(i));
+  }
+  plotFD(Res_invariant, "fd translation, scale, and rotation invariant, smaller sensitivity", 0);
+  return Res_invariant;
 }
 
 
@@ -82,7 +132,16 @@ dur	wait number of ms or until key is pressed
 */
 void Aia2::plotFD(const Mat& fd, string win, double dur){
   Mat invDFT;
-  dft(fd, invDFT, DFT_INVERSE); // Inverse transform to get image back.
+  if(fd.channels() == 1){// If it is rotation normalized and thus real valued
+    Mat out;
+    Mat phase(fd.size(),fd.type());
+    phase = 0;
+    Mat in[] = {fd,phase};
+    merge(in,2,out);
+    dft(out, invDFT, DFT_INVERSE); // Inverse transform to get image back.
+  }else{
+    dft(fd, invDFT, DFT_INVERSE); // Inverse transform to get image back.
+  }
   //Mat Image. This is the base image matrix
   Mat Image(800,800,CV_8UC1,Scalar(1));
 
@@ -97,12 +156,12 @@ void Aia2::plotFD(const Mat& fd, string win, double dur){
   split(invDFT, CH_splitted);
 
   minMaxLoc(CH_splitted[0], &ch1_minVal, &ch1_maxVal);
-  cout << ch1_maxVal << endl;
-  cout << ch1_minVal << endl;
+  //cout << ch1_maxVal << endl;
+  //cout << ch1_minVal << endl;
 
   minMaxLoc(CH_splitted[1], &ch2_minVal, &ch2_maxVal);
-  cout << ch2_maxVal << endl;
-  cout << ch2_minVal << endl;
+  //cout << ch2_maxVal << endl;
+  //cout << ch2_minVal << endl;
 
   double X = max((ch1_maxVal-ch1_minVal),(ch2_maxVal-ch2_minVal));
   //
@@ -154,7 +213,7 @@ void Aia2::run(string img, string template1, string template2){
 	int numOfErosions;				// number of applications of the erosion operator
 	// these two values work fine, but might be interesting for you to play around with them
 	int steps = 32;					// number of dimensions of the FD
-	double detThreshold = 0.01;		// threshold for detection
+	double detThreshold = 10;//0.01;		// threshold for detection
 
 	// get contour line from images
 	vector<Mat> contourLines1;
@@ -162,7 +221,7 @@ void Aia2::run(string img, string template1, string template2){
 	// TO DO !!!
 	// --> Adjust threshold and number of erosion operations
 	binThreshold = 127;
-	numOfErosions = 4;
+	numOfErosions = 0;
 	getContourLine(exC1, contourLines1, binThreshold, numOfErosions);
 	int mSize = 0, mc1 = 0, mc2 = 0, i = 0;
 	for(vector<Mat>::iterator c = contourLines1.begin(); c != contourLines1.end(); c++,i++){
@@ -237,12 +296,12 @@ void Aia2::run(string img, string template1, string template2){
 			// normalize fourier descriptor
 			Mat fd_norm = normFD(fd, steps);
 			// compare fourier descriptors
-			double err1 = norm(fd_norm, fd_norm)/steps;//	double err1 = norm(fd_norm, fd1_norm)/steps;
-			double err2 = norm(fd_norm, fd_norm)/steps;//	double err2 = norm(fd_norm, fd2_norm)/steps;
-      cout << "CHANGED LINES  240,241,243, 'double err1 = norm'" << endl;
+			double err1 = norm(fd_norm, fd1_norm)/steps;
+			double err2 = norm(fd_norm, fd2_norm)/steps;
 			// if similarity is too small, then reject (and color in cyan)
 			if (min(err1, err2) > detThreshold){
 				cout << "No class instance ( " << min(err1, err2) << " )" << endl;
+        cout << "err1 " << err1 << "err2 " << err2 << endl;
 				col = Vec3b(255,255,0);
 			}else{
 				// otherwise: assign color according to class
