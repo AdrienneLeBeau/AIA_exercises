@@ -79,7 +79,7 @@ Mat Aia2::normFD(const Mat& fd, int n){
   float norm_positive = cv::norm(fd.at<Vec2f>(1));
   for(int i= 0; i< fd.rows; ++i)
   {
-   fd_norma(i) = fd_norma(i)/norm_positive*100; //Scale to 100 instead of 1 because values become too small
+   fd_norma(i) = fd_norma(i)/norm_positive*1; //Scale to 100 instead of 1 because values become too small
   }
   plotFD(fd_norma, "fd translation and scale invariant", 0);
 
@@ -213,7 +213,7 @@ void Aia2::run(string img, string template1, string template2){
 	int numOfErosions;				// number of applications of the erosion operator
 	// these two values work fine, but might be interesting for you to play around with them
 	int steps = 32;					// number of dimensions of the FD
-	double detThreshold = 10;//0.01;		// threshold for detection
+	double detThreshold = 0.1;//0.01;		// threshold for detection
 
 	// get contour line from images
 	vector<Mat> contourLines1;
