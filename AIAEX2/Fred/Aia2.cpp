@@ -85,7 +85,6 @@ Mat Aia2::normFD(const Mat& fd, int n){
 
 
   // rotation invariance
-
   vector<Mat> CH_splitted;
   Mat fd_polar;
   split(fd_norma, CH_splitted);
@@ -94,21 +93,7 @@ Mat Aia2::normFD(const Mat& fd, int n){
   fd_polar = CH_splitted[0];
   plotFD(fd_polar, "fd translation, scale, and rotation invariant", 0);
 
-
   // smaller sensitivity for details
-/*  // Create new Mat of proper length
-  cv::Mat2d Res_invariant(Size(1,n+1),CV_32F);
-  // Copy over frequency 0
-  fd.row(0).copyTo(Res_invariant.row(0));
-  // Copy over the rest of the frequencies to save
-  for(int i = 1; i<= n/2; ++i){      // Iterate through all positive frequencies
-    fd.row(i).copyTo(Res_invariant.row(i));
-  }
-  for(int i = n/2+1; i<= n; ++i){   // Iterate through all negative frequencies
-    fd.row(fd.rows-n-1+i).copyTo(Res_invariant.row(i));
-  }
-  //plotFD(Res_invariant, "fd translation, scale, and rotation invariant, smaller sensitivity", 0);
-*/
   Mat Res_invariant(Size(1,n+1),CV_32F);
   // Copy over frequency 0
   fd_polar.row(0).copyTo(Res_invariant.row(0));
@@ -154,21 +139,14 @@ void Aia2::plotFD(const Mat& fd, string win, double dur){
   // Split 1 dim 2 channel Mat to a vector of two 1 dim 1 chan Mat
   vector<Mat> CH_splitted;
   split(invDFT, CH_splitted);
-
   minMaxLoc(CH_splitted[0], &ch1_minVal, &ch1_maxVal);
-  //cout << ch1_maxVal << endl;
-  //cout << ch1_minVal << endl;
-
   minMaxLoc(CH_splitted[1], &ch2_minVal, &ch2_maxVal);
-  //cout << ch2_maxVal << endl;
-  //cout << ch2_minVal << endl;
-
   double X = max((ch1_maxVal-ch1_minVal),(ch2_maxVal-ch2_minVal));
   //
-  CH_splitted[0].convertTo(CH_splitted[0],CV_32S,1,-ch1_minVal);
-  CH_splitted[1].convertTo(CH_splitted[1],CV_32S,1,-ch2_minVal);
-  CH_splitted[0].convertTo(CH_splitted[0],CV_32S,600/X,100);
-  CH_splitted[1].convertTo(CH_splitted[1],CV_32S,600/X,100);
+  CH_splitted[0].convertTo(CH_splitted[0],CV_32F,1,-ch1_minVal);// Convert to 32bit float for accuracy
+  CH_splitted[1].convertTo(CH_splitted[1],CV_32F,1,-ch2_minVal);
+  CH_splitted[0].convertTo(CH_splitted[0],CV_32S,600.0/X,100);// Convert to integer for mat access
+  CH_splitted[1].convertTo(CH_splitted[1],CV_32S,600.0/X,100);
 
   //
   vector<Mat> big;
@@ -213,7 +191,7 @@ void Aia2::run(string img, string template1, string template2){
 	int numOfErosions;				// number of applications of the erosion operator
 	// these two values work fine, but might be interesting for you to play around with them
 	int steps = 32;					// number of dimensions of the FD
-	double detThreshold = 0.1;//0.01;		// threshold for detection
+	double detThreshold = 0.10;//0.01;		// threshold for detection
 
 	// get contour line from images
 	vector<Mat> contourLines1;
