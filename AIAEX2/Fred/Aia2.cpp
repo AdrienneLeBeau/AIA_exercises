@@ -91,22 +91,30 @@ Mat Aia2::normFD(const Mat& fd, int n){
   cartToPolar(CH_splitted[0],CH_splitted[1],CH_splitted[0],CH_splitted[1]);
   //CH_splitted[1] =  0;
   fd_polar = CH_splitted[0];
+  cout << "Polar size" << fd_polar.size() << endl;
   plotFD(fd_polar, "fd translation, scale, and rotation invariant", 0);
 
   // smaller sensitivity for details
-  Mat Res_invariant(Size(1,n+1),CV_32F);
+  //Mat Res_invariant(Size(1,n+1),CV_32F);
+  Mat Res_invariant(Size(1,n),CV_32F);
   // Copy over frequency 0
   fd_polar.row(0).copyTo(Res_invariant.row(0));
   // Copy over the rest of the frequencies to save
-  for(int i = 1; i<= n/2; ++i){      // Iterate through all positive frequencies
+  for(int i = 1; i< n/2; ++i){      // I
+  //for(int i = 1; i<= n/2; ++i){      // Iterate through all positive frequencies
     fd_polar.row(i).copyTo(Res_invariant.row(i));
   }
-  for(int i = n/2+1; i<= n; ++i){   // Iterate through all negative frequencies
+  // set nyqvist to 0
+  fd_polar.row(n/2).copyTo(Res_invariant.row(n/2));
+  Res_invariant.row(n/2) = 0;
+  for(int i = n/2+1; i<n; ++i){   // Iterate through all negative frequencies
+  //for(int i = n/2+1; i<= n; ++i){   // Iterate through all negative frequencies
     fd_polar.row(fd.rows-n-1+i).copyTo(Res_invariant.row(i));
   }
   plotFD(Res_invariant, "fd translation, scale, and rotation invariant, smaller sensitivity", 0);
   return Res_invariant;
 }
+
 
 
 // plot fourier descriptor
@@ -237,7 +245,7 @@ void Aia2::run(string img, string template1, string template2){
 	vector<Mat> contourLines;
 	// TO DO !!!
 	// --> Adjust threshold and number of erosion operations
-	binThreshold = 127;
+	binThreshold = 123;
 	numOfErosions = 3;
 	getContourLine(query, contourLines, binThreshold, numOfErosions);
 
