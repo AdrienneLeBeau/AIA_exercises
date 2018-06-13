@@ -1,0 +1,37 @@
+vector<Mat> Aia3::makeObjectTemplate(const Mat& templateImage, double sigma, double templateThresh){
+
+   //Mat splittedmarix;
+   vector<Mat> splittedmarix;
+   Mat gradimage = calcDirectionalGrad(templateImage, sigma);
+   split(gradimage,splittedmarix);
+
+   //cout << splittedmarix[0] << endl;
+   //cout << splittedmarix[1] << endl;
+
+   Mat absval;
+   absval.zeros(gradimage.cols,gradimage.cols,CV_64F);
+
+   Mat xpowmatrix;
+   Mat ypowmatrix;
+   Mat OXY;
+
+   pow(splittedmarix[0], 2, xpowmatrix);
+   pow(splittedmarix[1], 2, ypowmatrix);
+
+   Mat sumpowmatrix = xpowmatrix + ypowmatrix;
+   pow(sumpowmatrix,0.5,OXY);
+
+   double min, max;
+   minMaxLoc(OXY, &min, &max);
+   OXY.setTo(0, OXY < max*templateThresh);
+   OXY.setTo(255, OXY > 0);
+
+   //showImage(OXY,"Binary image indicating pixels", 0);
+   //waitKey(0);
+
+   vector <Mat> returnvector;
+   returnvector.push_back(OXY.clone());
+   returnvector.push_back(gradimage.clone());
+
+   return returnvector;
+}
