@@ -1,0 +1,59 @@
+vector<Mat> Aia3::makeObjectTemplate(const Mat& templateImage, double sigma, double templateThresh){
+
+  //Mat Gaussianblurimage;
+  // unsure about the kernel Size( 5, 5 )
+  //GaussianBlur( templateImage, Gaussianblurimage, Size( 0, 0 ), sigma, sigma);
+  
+   // Gradient- Matrices
+   Mat Dx;
+   Mat Dy;
+   int ksize = max(sigma*3,3.);
+
+   // Calculating gradients in x- and y- directions using std sigma
+   Sobel(templateImage, Dx, CV_64F, 1, 0, ksize);
+   showImage(Dx,"Derivative in dx with filter", 0);
+   waitKey(0);
+
+   Sobel(templateImage, Dy, CV_64F, 0, 1, ksize);
+   showImage(Dy,"Derivative in dy with filter", 0);
+   waitKey(0);
+
+   Mat absval;
+   absval.zeros(Dx.cols,Dy.cols,CV_64F);
+
+   Mat xpowmatrix;
+   Mat ypowmatrix;
+   Mat OXY;
+
+   pow(Dx, 2, xpowmatrix);
+   pow(Dy, 2, ypowmatrix);
+
+   Mat sumpowmatrix = xpowmatrix + ypowmatrix;
+   pow(sumpowmatrix,0.5,OXY);
+
+   double min, max;
+   minMaxLoc(OXY, &min, &max);
+   OXY.setTo(0, OXY < max*templateThresh);
+   OXY.setTo(255, OXY > 0);
+
+   //showImage(OXY,"Binary image indicating pixels", 0);
+   //waitKey(0);
+
+   vector <Mat> returnvector;
+   returnvector.push_back(OXY.clone());
+
+   vector <Mat> complexmatrix;
+   complexmatrix.push_back(Dx.clone());
+   complexmatrix.push_back(Dy.clone());
+
+
+   Mat mergedcomplex;
+   merge(complexmatrix,mergedcomplex);
+
+   returnvector.push_back(mergedcomplex.clone());
+
+   //showImage(returnvector[0], "Binary part of template", 0);
+   //waitKey(0);
+
+   return returnvector;
+}
