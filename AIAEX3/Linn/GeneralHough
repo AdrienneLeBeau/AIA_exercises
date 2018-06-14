@@ -1,0 +1,67 @@
+vector< vector<Mat> > Aia3::generalHough(const Mat& gradImage, const vector<Mat>& templ, double scaleSteps, double* scaleRange, double angleSteps, double* angleRange){
+
+    vector< vector<Mat> > hough;
+    /*
+    float delta_s = (scaleRange[1] - scaleRange[0])/scaleSteps;
+    float delta_theta = (angleRange[1] - angleRange[0])/angleSteps;
+    cout << "Scale stepsize :" << delta_s << endl;
+    cout << "Scale thetasize :" << delta_theta << endl;
+    cout << "Scale Max :" << scaleRange[1] << endl;
+    cout << "Scale Min :" << scaleRange[0] << endl;
+    */
+    
+    // Doing this the hard waYyy
+    vector<Mat> splittedmarix;
+
+    split(templ[1],splittedmarix);
+    Mat Dx = splittedmarix[0];
+    Mat Dy = splittedmarix[1];
+    //cout << splittedmarix[0].size() << endl;
+    Mat Cx = Dx.mul(templ[0]);
+    Mat Cy = Dy.mul(templ[0]);
+
+    // No merging back
+    Mat C = Cx + Cy;
+    Mat resizemulimatrix;
+    resize(C, resizemulimatrix, Size(Cy.rows*2, Cy.cols));
+
+    //cout << resizemulimatrix << endl;
+    
+
+    //dft(resizemulimatrix, fftMask);
+    //makeFFTObjectMask(templ, 1 0, Mat& fftMask); // Do something ?
+    //cout << fftMask << endl;
+
+    /*
+    Mat resizebinarymap;
+    resize(templ[0], resizebinarymap, templ[1].size());
+    cout << resizebinarymap.size() << endl;
+    cout << templ[1].size() << endl;
+
+    Mat C = templ[1].mul(resizebinarymap);*/
+
+    //cout << "Matixes of interest" << "gradimage = " << gradImage << endl;
+    //cout << "Binary edge" << templ[0] << " " << "Gradient" << templ[1] << endl;
+    /*
+    for(int s = 1; s < (scaleSteps+1); s++){
+        float s_loop = s * delta_s;
+        //cout << s_loop << endl;
+        for( int theta = 1; theta < (angleSteps+1); theta++){
+            float theta_loop = theta * delta_theta;
+            //cout << theta_loop << endl;
+            //CALCULATE SOMETHING
+
+        }
+    }
+    */
+    cout << "KLAR" << endl;
+    /*
+    for(double s = scaleRange[0]; s < (scaleRange[1]+delta_s); s+=delta_s){
+        cout << s << endl;
+        // for(int theta = 0; j < Gaussianblurimage.cols; j++){
+           //absval.at<double>(i,j) = ((Dx.at<double>(i,j))^2 + (Dy.at<double>(i,j))^2)^(0.5);
+        // }
+      }*/
+
+    return hough;
+}
