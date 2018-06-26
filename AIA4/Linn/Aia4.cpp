@@ -1,4 +1,4 @@
-//============================================================================
+//========================================================
 // Name        : Aia5.cpp
 // Author      : Ronny Haensch
 // Version     : 1.0
@@ -24,6 +24,7 @@ Mat Aia5::calcCompLogL(const vector<struct comp*>& model, const Mat& features){
 	// the output.
 	Mat log_P_out = Mat::zeros(C_current,Number_features,CV_32FC1);
 	float Z = -Number_dimensions/2*log(2*CV_PI);
+	Mat Ones = Mat::ones(Number_dimensions,Number_features,CV_32FC1);
 
 	for(int i = 0; i < C_current; i++){
 
@@ -31,8 +32,6 @@ Mat Aia5::calcCompLogL(const vector<struct comp*>& model, const Mat& features){
 		Mat inv_M;
 		invert(model.at(i)->covar,inv_M);
 		float Constant = -0.5*log(determinant(model.at(i)->covar));
-		Mat Ones = Mat::ones(Number_dimensions,Number_features,CV_32FC1);
-
 
 			for(int j = 0; j < Number_features; j++){
 
@@ -89,6 +88,7 @@ Mat Aia5::calcMixtureLogL(const vector<struct comp*>& model, const Mat& features
 			for(int i = 0; i < C_current; i++){
 				//cout << (model.at(i)->weight)*exp(log_Prob_all_Cs.at<float>(i,j)) << endl;
 				exp_sum += (model.at(i)->weight)*exp(log_Prob_all_Cs.at<float>(i,j));
+
 			}
 
 		log_sum.at<float>(0,j) = log(exp_sum);
@@ -280,7 +280,8 @@ void Aia5::test(void){
     int vectLen = 2;
 
     // number of components (clusters) to generate
-    int actualComponentNum = 10;
+    //int actualComponentNum = 10;
+		int actualComponentNum = 4;
 
     // maximal standard deviation of vectors in each cluster
     double actualDevMax = 0.3;
@@ -295,10 +296,12 @@ void Aia5::test(void){
     randu(actualSDev, 0, actualDevMax);
 
     // print distribution parameters to screen
+		/*
     cout << "true mean" << endl;
     cout << actualMean << endl;
     cout << "true sdev" << endl;
     cout << actualSDev << endl;
+		*/
 
     // initialise random cluster vectors
     Mat trainingData = Mat::zeros(vectLen, trainingSize*actualComponentNum, CV_32FC1);
@@ -496,8 +499,8 @@ void Aia5::plotGMM(const vector<struct comp*>& model, const Mat& features){
     }
 
     // show plot an abd wait for key
-    imshow("Current model", plot);
-    waitKey(0);
+    //imshow("Current model", plot);
+    //waitKey(0);
 
 }
 
@@ -585,3 +588,4 @@ void Aia5::readImageDatabase(string dataPath, vector<Mat>& db){
 	db.push_back(feature);
     }
 }
+
